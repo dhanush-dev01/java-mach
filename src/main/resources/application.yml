@@ -1,0 +1,13 @@
+commercetools:
+  projectKey: mach-int-2024-key
+  clientId: vPXTh78dk4INK_9iOzZxMDCQ
+  clientSecret: yS9V-z5NwHym_ND6CYQn-teBisjyemCS
+  serviceRegion: GCP_AUSTRALIA_SOUTHEAST1
+management:
+  endpoints:
+    web:
+      exposure:
+        include: "*"
+#springdoc:
+#  swagger-ui:
+#    path: /swagger-ui.html
