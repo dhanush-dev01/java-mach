@@ -24,7 +24,7 @@ public class OrdersController {
     private OrderService orderService;
 
 
-    @PostMapping("/placeorderAnon")
+    @PostMapping("/placeorderAnonymous")
     public CompletableFuture<CompletableFuture<?>> makeOrderAnonymous(@RequestParam String anonymousId) throws JsonProcessingException {
         CompletableFuture<Optional<Cart>> cartForUser = cartService.getCartForAnonUser(anonymousId);
         return cartForUser.thenApply(c -> {

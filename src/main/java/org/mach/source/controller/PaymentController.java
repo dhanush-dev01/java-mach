@@ -22,7 +22,7 @@ public class PaymentController {
     @Autowired
     private CartService cartService;
 
-    @PostMapping("/codAnon")
+    @PostMapping("/codAnonymous")
     public CompletableFuture<?> startCODpaymentAnon(@RequestParam String anonymousId) throws JsonProcessingException {
 
         //final PaymentMethod cod = PaymentMethod.CASHONDELIVERY;

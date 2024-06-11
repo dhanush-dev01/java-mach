@@ -21,7 +21,7 @@ public class ShippingAddressController {
     @Autowired
     private CartService cartService;
 
-    @PostMapping("/addAddressAnon")
+    @PostMapping("/addAddressAnonymous")
     public CompletableFuture<?> addShippingAddressAnon(@RequestParam String anonymousId, @RequestBody CustomerAddress address) throws JsonProcessingException {
         CompletableFuture<Optional<Cart>> cartForAnonUser = cartService.getCartForAnonUser(anonymousId);
 

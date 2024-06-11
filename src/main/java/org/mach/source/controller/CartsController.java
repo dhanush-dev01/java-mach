@@ -15,7 +15,7 @@ public class CartsController {
     @Autowired
     private CartService cartService;
     
-    @PostMapping("/addAnonCart")
+    @PostMapping("/addAnonymousCart")
     public CompletableFuture<Cart> addItemToCartAnonymous(@RequestBody ItemToCart itemToCart) throws JsonProcessingException {
         return cartService.addItemToCartAnonymous(itemToCart);
     }
