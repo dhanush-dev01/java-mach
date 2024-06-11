@@ -6,6 +6,7 @@ public class CustomerDTO {
     private String email;
     private String password;
     private String community;
+    private String newPassword;
 
     public String getFirstName() {
         return firstName;
@@ -45,5 +46,13 @@ public class CustomerDTO {
 
     public void setPassword(String password) {
         this.password = password;
+    }
+
+    public String getNewPassword() {
+        return newPassword;
+    }
+
+    public void setNewPassword(String newPassword) {
+        this.newPassword = newPassword;
     }
 }

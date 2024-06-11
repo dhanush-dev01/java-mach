@@ -90,4 +90,11 @@ public class CartService {
                 .post(cartDraft)
                 .execute().thenApply(ApiHttpResponse::getBody);
     }
+
+    public CompletableFuture<Cart> getCartByCustomer(String customerid) {
+        return byProjectKeyRequestBuilder.carts()
+                .withCustomerId(customerid)
+                .get().execute().thenApply(ApiHttpResponse::getBody);
+
+    }
 }

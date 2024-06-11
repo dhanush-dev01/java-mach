@@ -24,4 +24,9 @@ public class CartsController {
     public CompletableFuture<Cart> addItemToCustomerCart(@RequestBody ItemToCart itemToCart, @RequestParam String customerid) throws JsonProcessingException {
         return cartService.addItemToCustomerCart(itemToCart, customerid);
     }
+
+    @GetMapping("/getCartByCustomer")
+    public CompletableFuture<Cart> getCartByCustomer(@RequestParam String customerid) throws JsonProcessingException {
+        return cartService.getCartByCustomer(customerid);
+    }
 }

@@ -14,7 +14,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
@@ -208,5 +207,30 @@ public class CustomerService {
             return CompletableFuture.completedFuture(records);
         }
         return CompletableFuture.completedFuture(new ArrayList<>());
+    }
+
+    public CompletableFuture<Customer> resetPassword(CustomerDTO customerDTO) {
+        CustomerToken customerToken = byProjectKeyRequestBuilder.customers()
+                .passwordToken().post(CustomerCreatePasswordResetTokenBuilder.of()
+                        .email(customerDTO.getEmail()).build())
+                .executeBlocking().getBody();
+        CompletableFuture<Customer> customerCF = byProjectKeyRequestBuilder.customers().passwordReset()
+                .post(CustomerResetPasswordBuilder.of()
+                        .tokenValue(customerToken.getValue())
+                        .newPassword(customerDTO.getNewPassword()).build())
+                .execute().thenApply(ApiHttpResponse::getBody);
+        return customerCF;
+    }
+
+    public CompletableFuture<Customer> resetMyPassword(CustomerDTO customerDTO) {
+        CustomerToken myToken = byProjectKeyRequestBuilder.customers()
+                .passwordToken().post(CustomerCreatePasswordResetTokenBuilder.of()
+                        .email(customerDTO.getEmail()).build())
+                .executeBlocking().getBody();
+        return byProjectKeyRequestBuilder.me().password().reset()
+                .post(MyCustomerResetPasswordBuilder.of()
+                        .tokenValue(myToken.getValue())
+                        .newPassword(customerDTO.getNewPassword()).build())
+                .execute().thenApply(ApiHttpResponse::getBody);
     }
 }

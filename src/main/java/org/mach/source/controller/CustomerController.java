@@ -2,7 +2,6 @@ package org.mach.source.controller;
 
 import com.commercetools.api.models.customer.Customer;
 import com.commercetools.api.models.customer.CustomerSignInResult;
-import com.fasterxml.jackson.core.JsonProcessingException;
 import org.mach.source.dto.CustomerDTO;
 import org.mach.source.service.CustomerService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -47,4 +46,15 @@ public class CustomerController {
     public CompletableFuture<List<String>> getRecords(@RequestParam String customerid) throws ExecutionException, InterruptedException {
         return customerService.getRecords(customerid);
     }
+
+    @PostMapping("/resetPassword")
+    public CompletableFuture<Customer> resetPassword(@RequestBody CustomerDTO customerDTO) throws ExecutionException, InterruptedException {
+        return customerService.resetPassword(customerDTO);
+    }
+
+    @PostMapping("/resetMyPassword")
+    public CompletableFuture<Customer> resetMyPassword(@RequestBody CustomerDTO customerDTO) throws ExecutionException, InterruptedException {
+        return customerService.resetMyPassword(customerDTO);
+    }
+
 }
