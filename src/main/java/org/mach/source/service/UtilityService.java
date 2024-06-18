@@ -19,8 +19,9 @@ public class UtilityService {
 
     public List<String> getCustomerObjectValues() throws ExecutionException, InterruptedException {
         Object obj = getCustomObjects().get();
-        LinkedHashMap lmap = (LinkedHashMap) obj;
-        List communities = (List) lmap.get("communities");
+        List<String> communities = (List) obj;
+        //LinkedHashMap lmap = (LinkedHashMap) obj;
+        //List communities = (List) lmap.get("communities");
         return communities;
     }
 
