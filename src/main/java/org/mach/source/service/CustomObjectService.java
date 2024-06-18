@@ -27,7 +27,7 @@ public class CustomObjectService {
                             .value(customerObjectValues)
                             .build())
                     .executeBlocking().getBody();
-            return communityName+ " add to community list";
+            return communityName+ " added to community list";
         }
 
         return communityName+ " is already present in community list";
