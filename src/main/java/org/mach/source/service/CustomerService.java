@@ -16,6 +16,7 @@ import org.springframework.stereotype.Service;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 
@@ -27,7 +28,7 @@ public class CustomerService {
     @Autowired
     private UtilityService utilityService;
 
-    public CompletableFuture<CustomerSignInResult> addCustomer(String customerType, CustomerDTO customerDTO) throws ExecutionException, InterruptedException {
+    public CompletableFuture<CustomerSignInResult> addCustomer(CustomerDTO customerDTO) throws ExecutionException, InterruptedException {
 
        /* CustomFieldsBuilder community = CustomFieldsBuilder.of()
                 .type(TypeReferenceBuilder.of().id("6bddce2f-a21d-4f6e-93bb-181f16ad3488").build())
@@ -49,7 +50,7 @@ public class CustomerService {
                 .password(customerDTO.getPassword())
                 .custom(customFieldsDraft)
                 .build();
-        if(customerType.equalsIgnoreCase("leader")){
+        if(Objects.nonNull(customerDTO.getCustomerType()) && customerDTO.getCustomerType().equalsIgnoreCase("leader")){
             customerDraft.setCustomerGroup(CustomerGroupResourceIdentifierBuilder.of().key("cust-leader").build());
         } else {
             customerDraft.setCustomerGroup(CustomerGroupResourceIdentifierBuilder.of().key("cust-normal").build());

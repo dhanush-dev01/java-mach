@@ -18,8 +18,8 @@ public class CustomerController {
     private CustomerService customerService;
 
     @PostMapping("/signUpCustomer")
-    public CompletableFuture<CustomerSignInResult> addCustomer(@RequestParam String customerType, @RequestBody CustomerDTO customerDTO) throws ExecutionException, InterruptedException {
-        return customerService.addCustomer(customerType, customerDTO);
+    public CompletableFuture<CustomerSignInResult> addCustomer(@RequestBody CustomerDTO customerDTO) throws ExecutionException, InterruptedException {
+        return customerService.addCustomer(customerDTO);
     }
 
     @PostMapping("/addToCommunity")
