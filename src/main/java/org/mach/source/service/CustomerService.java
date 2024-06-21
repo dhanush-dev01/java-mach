@@ -7,7 +7,10 @@ import com.commercetools.api.models.custom_object.CustomObjectDraftBuilder;
 import com.commercetools.api.models.custom_object.CustomObjectPagedQueryResponse;
 import com.commercetools.api.models.customer.*;
 import com.commercetools.api.models.customer_group.CustomerGroupResourceIdentifierBuilder;
+import com.commercetools.api.models.graph_ql.GraphQLRequest;
+import com.commercetools.api.models.graph_ql.GraphQLRequestBuilder;
 import com.commercetools.api.models.type.*;
+import com.fasterxml.jackson.databind.JsonNode;
 import io.vrap.rmf.base.client.ApiHttpResponse;
 import org.mach.source.dto.CustomerDTO;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -233,5 +236,30 @@ public class CustomerService {
                         .tokenValue(myToken.getValue())
                         .newPassword(customerDTO.getNewPassword()).build())
                 .execute().thenApply(ApiHttpResponse::getBody);
+    }
+
+    public CompletableFuture<Customer> queryCustomerWithId(String customerid) {
+        return byProjectKeyRequestBuilder.customers().withId(customerid).get().execute().thenApply(ApiHttpResponse::getBody);
+
+    }
+
+    public JsonNode queryCustFNameGql(String name) {
+        GraphQLRequest gqlRequest = GraphQLRequestBuilder.of()
+                .query("query ReturnASingleCustomerSearch($customerFilter: String) {\n" +
+                        "  customers(where: $customerFilter) {\n" +
+                        "    results{\n" +
+                        "      firstName\n" +
+                        "      lastName\n" +
+                        "      middleName\n" +
+                        "      email\n" +
+                        "      id\n" +
+                        "    }    \n" +
+                        "  }\n" +
+                        "}")
+                .variables(b -> b.addValue("customerFilter", "firstName=\"" + name + "\""))
+                .build();
+
+        ApiHttpResponse<JsonNode> jsonNodeApiHttpResponse = byProjectKeyRequestBuilder.graphql().post(gqlRequest).executeBlocking(JsonNode.class);
+        return jsonNodeApiHttpResponse.getBody().at("/data/customers/results");
     }
 }

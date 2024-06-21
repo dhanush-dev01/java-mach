@@ -2,6 +2,7 @@ package org.mach.source.controller;
 
 import com.commercetools.api.models.customer.Customer;
 import com.commercetools.api.models.customer.CustomerSignInResult;
+import com.fasterxml.jackson.databind.JsonNode;
 import org.mach.source.dto.CustomerDTO;
 import org.mach.source.service.CustomerService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -16,6 +17,16 @@ import java.util.concurrent.ExecutionException;
 public class CustomerController {
     @Autowired
     private CustomerService customerService;
+
+    @GetMapping("/getCustomerById")
+    public CompletableFuture<Customer> queryCustomerWithId(@RequestParam String id) {
+        return customerService.queryCustomerWithId(id);
+    }
+
+    @GetMapping("/getCustomerBasicWithFname")
+    public JsonNode queryCustomerByFname(@RequestParam String name) {
+        return customerService.queryCustFNameGql(name);
+    }
 
     @PostMapping("/signUpCustomer")
     public CompletableFuture<CustomerSignInResult> addCustomer(@RequestBody CustomerDTO customerDTO) throws ExecutionException, InterruptedException {
