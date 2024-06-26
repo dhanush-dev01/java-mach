@@ -11,6 +11,7 @@ import com.commercetools.api.models.product_selection.ProductSelectionProductPag
 import com.commercetools.api.models.type.*;
 import io.vrap.rmf.base.client.ApiHttpResponse;
 import kotlin.collections.ArrayDeque;
+import org.mach.source.model.customObj.CustomObjectModel;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -30,10 +31,16 @@ public class ProductSelectionService {
 
     public List<String> getProductSelectionProducts(String community) throws ExecutionException, InterruptedException {
 
-        List<String> customerObjectValues = utilityService.getCustomerObjectValues();
+        //List<String> customerObjectValues = utilityService.getCustomerObjectValues1();
+        List<String> communityNames = new ArrayList<>();
+        List<CustomObjectModel> customerObjectValues = utilityService.getCustomerObjectValues();
+        for(CustomObjectModel customerObjectModel : customerObjectValues){
+            communityNames.add(customerObjectModel.getName());
+            // System.out.println("test");
+        }
         List<String> productIds = new ArrayList<>();
 
-        if(customerObjectValues.contains(community)){
+        if(communityNames.contains(community)){
             CompletableFuture<ProductSelectionProductPagedQueryResponse> productSelectionProductPagedQueryResponseCF = byProjectKeyRequestBuilder.productSelections()
                     .withKey(community + "-key").products()
                     .get().execute().thenApply(ApiHttpResponse::getBody);

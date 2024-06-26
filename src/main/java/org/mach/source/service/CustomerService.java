@@ -13,6 +13,7 @@ import com.commercetools.api.models.type.*;
 import com.fasterxml.jackson.databind.JsonNode;
 import io.vrap.rmf.base.client.ApiHttpResponse;
 import org.mach.source.dto.CustomerDTO;
+import org.mach.source.model.customObj.CustomObjectModel;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -37,8 +38,14 @@ public class CustomerService {
                 .type(TypeReferenceBuilder.of().id("6bddce2f-a21d-4f6e-93bb-181f16ad3488").build())
                 .fields(FieldContainerBuilder.of().addValue("community", customerDTO.getCommunity()).build());*/
         CustomFieldsDraft customFieldsDraft = null;
-                List<String> customerObjectValues = utilityService.getCustomerObjectValues();
-        if(customerObjectValues.contains(customerDTO.getCommunity())){
+        //List<String> customerObjectValues = utilityService.getCustomerObjectValues1();
+        List<CustomObjectModel> customerObjectValues = utilityService.getCustomerObjectValues();
+        List<String> communityNames = new ArrayList<>();
+        for(CustomObjectModel customerObjectModel : customerObjectValues){
+            communityNames.add(customerObjectModel.getName());
+        }
+
+        if(communityNames.contains(customerDTO.getCommunity())){
             customFieldsDraft = CustomFieldsDraftBuilder.of()
                     .type(TypeResourceIdentifierBuilder.of().key("type-customer").build())
                     .fields(FieldContainerBuilder.of().addValue("community", customerDTO.getCommunity()).build())
@@ -65,13 +72,18 @@ public class CustomerService {
 
     public CompletableFuture<String> addToCommunity(String community, String customerid) throws ExecutionException, InterruptedException {
 
-        List<String> communities = utilityService.getCustomerObjectValues();
+        //List<String> communities = utilityService.getCustomerObjectValues1();
+        List<CustomObjectModel> customerObjectValues = utilityService.getCustomerObjectValues();
+        List<String> communityNames = new ArrayList<>();
+        for(CustomObjectModel customerObjectModel : customerObjectValues){
+            communityNames.add(customerObjectModel.getName());
+        }
 
         CompletableFuture<Customer> customerCF = byProjectKeyRequestBuilder.customers()
                 .withId(customerid).get()
                 .execute().thenApply(ApiHttpResponse::getBody);
 
-        if(communities.contains(community)) {
+        if(communityNames.contains(community)) {
             /*CompletableFuture<Customer> customerCF = byProjectKeyRequestBuilder.customers()
                     .withId(customerid).get()
                     .execute().thenApply(ApiHttpResponse::getBody);*/
@@ -106,7 +118,7 @@ public class CustomerService {
             });
 
         }
-        return CompletableFuture.completedFuture(community +" is not a valid community available in Joggerhub. Available communities are "+ communities);
+        return CompletableFuture.completedFuture(community +" is not a valid community available in Joggerhub. Available communities are "+ communityNames);
 
     }
 
@@ -207,8 +219,13 @@ public class CustomerService {
         }
         if (customObjectPagedQueryResponseResults != null && !customObjectPagedQueryResponseResults.isEmpty()) {
             Object object = customObjectPagedQueryResponseResults.get(0).getValue();
+            List<String> replacedRecords = new ArrayList<>();
             List<String> records = (List) object;
-            return CompletableFuture.completedFuture(records);
+            for(String record:records){
+                String temp = record.replace("_", " --> ");;
+                replacedRecords.add(temp);
+            }
+            return CompletableFuture.completedFuture(replacedRecords);
         }
         return CompletableFuture.completedFuture(new ArrayList<>());
     }
@@ -261,5 +278,79 @@ public class CustomerService {
 
         ApiHttpResponse<JsonNode> jsonNodeApiHttpResponse = byProjectKeyRequestBuilder.graphql().post(gqlRequest).executeBlocking(JsonNode.class);
         return jsonNodeApiHttpResponse.getBody().at("/data/customers/results");
+    }
+
+    public List<CustomerDTO> getCustomersByCommunity(String communityName) {
+        CustomerPagedQueryResponse customerPagedQueryResponse = byProjectKeyRequestBuilder.customers().get()
+                .addWhere("custom(fields(community = :community))")
+                .addPredicateVar("community", communityName)
+                .executeBlocking().getBody();
+        List<CustomerDTO> customerDTOList = new ArrayList<>();
+        if(customerPagedQueryResponse.getResults() != null && customerPagedQueryResponse.getResults().size() > 0) {
+            List<Customer> queryResponseResults = customerPagedQueryResponse.getResults();
+            for (Customer customer : queryResponseResults) {
+                CustomerDTO customerDTO = new CustomerDTO();
+                customerDTO.setEmail(customer.getEmail());
+                customerDTO.setFirstName(customer.getFirstName());
+                customerDTO.setLastName(customer.getLastName());
+
+                customerDTOList.add(customerDTO);
+            }
+        }
+
+        return customerDTOList;
+    }
+
+    public CompletableFuture<String> appendRecords(String customerid, String date, int recordVar) {
+        CustomObjectPagedQueryResponse customObjectPagedQueryResponse = byProjectKeyRequestBuilder.customObjects()
+                .withContainer(customerid + "-container").get()
+                .executeBlocking().getBody();
+        List<CustomObject> customObjectPagedQueryResponseResults = customObjectPagedQueryResponse.getResults();
+        if(customObjectPagedQueryResponseResults != null && !customObjectPagedQueryResponseResults.isEmpty()) {
+            Object object = customObjectPagedQueryResponseResults.get(0).getValue();
+            List<String> records = (List) object;
+            //List<String> records = (List) lmap.get("records");
+            /*boolean exists = false;
+            for (String record:records){
+                String dateSubstring = record.substring(0, 10);
+                if(dateSubstring.equalsIgnoreCase(date)){
+                    records.remove(record);
+                    records.add(dateSubstring+"_"+recordVar);
+                    exists = true;
+                    break;
+                }
+            }
+            if(!exists){
+                records.add(date+"_"+recordVar);
+            }*/
+            records.add(date+"_"+recordVar);
+            CustomObjectDraft customObjectDraft = CustomObjectDraftBuilder.of()
+                    .container(customerid + "-container")
+                    .key(customerid+"-key")
+                    .value(records)
+                    .build();
+            byProjectKeyRequestBuilder.customObjects()
+                    .post(customObjectDraft).executeBlocking();
+            return CompletableFuture.completedFuture("Custom objects updated");
+
+
+        }
+
+        if(customObjectPagedQueryResponseResults != null && customObjectPagedQueryResponseResults.isEmpty()) {
+            //Add records
+            List<String> records = new ArrayList<>();
+            records.add(date+"_"+recordVar);
+            CustomObjectDraft customObjectDraft = CustomObjectDraftBuilder.of()
+                    .container(customerid + "-container")
+                    .key(customerid+"-key")
+                    .value(records)
+                    .build();
+            byProjectKeyRequestBuilder.customObjects()
+                    .post(customObjectDraft).executeBlocking();
+            return CompletableFuture.completedFuture("Custom objects created");
+
+        }
+
+        return CompletableFuture.completedFuture("Finished");
     }
 }

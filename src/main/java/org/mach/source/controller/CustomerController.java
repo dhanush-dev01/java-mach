@@ -48,9 +48,14 @@ public class CustomerController {
         return customerService.getCommunity(customerid);
     }
 
-    @PostMapping("/updateRecords")
+    /*@PostMapping("/updateRecords")
     public CompletableFuture<String> updateRecords(@RequestParam String customerid, @RequestParam String date, @RequestParam int record) throws ExecutionException, InterruptedException {
         return customerService.updateRecords(customerid, date, record);
+    }*/
+
+    @PostMapping("/appendRecords")
+    public CompletableFuture<String> appendRecords(@RequestParam String customerid, @RequestParam String date, @RequestParam int record) throws ExecutionException, InterruptedException {
+        return customerService.appendRecords(customerid, date, record);
     }
 
     @GetMapping("/getRecords")
@@ -66,6 +71,11 @@ public class CustomerController {
     @PostMapping("/resetMyPassword")
     public CompletableFuture<Customer> resetMyPassword(@RequestBody CustomerDTO customerDTO) throws ExecutionException, InterruptedException {
         return customerService.resetMyPassword(customerDTO);
+    }
+
+    @GetMapping("/getCustomersByCommunity")
+    public List<CustomerDTO> getCustomersByCommunity(@RequestParam String communityName) throws ExecutionException, InterruptedException {
+        return customerService.getCustomersByCommunity(communityName);
     }
 
 }

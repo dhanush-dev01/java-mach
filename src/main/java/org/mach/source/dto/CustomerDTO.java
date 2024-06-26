@@ -1,5 +1,8 @@
 package org.mach.source.dto;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
+
+@JsonInclude(JsonInclude.Include.NON_NULL)
 public class CustomerDTO {
     private String firstName;
     private String lastName;
