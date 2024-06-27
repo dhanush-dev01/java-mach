@@ -4,6 +4,7 @@ import com.commercetools.api.models.customer.Customer;
 import com.commercetools.api.models.customer.CustomerSignInResult;
 import com.fasterxml.jackson.databind.JsonNode;
 import org.mach.source.dto.CustomerDTO;
+import org.mach.source.model.customer.GoalObj;
 import org.mach.source.service.CustomerService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
@@ -58,9 +59,19 @@ public class CustomerController {
         return customerService.appendRecords(customerid, date, record);
     }
 
+    @PostMapping("/appendGoals")
+    public CompletableFuture<String> appendOrUpdateGoals(@RequestParam String customerid, @RequestBody GoalObj goalObj) throws ExecutionException, InterruptedException {
+        return customerService.appendOrUpdateGoals(customerid, goalObj);
+    }
+
     @GetMapping("/getRecords")
     public CompletableFuture<List<String>> getRecords(@RequestParam String customerid) throws ExecutionException, InterruptedException {
         return customerService.getRecords(customerid);
+    }
+
+    @GetMapping("/getGoals")
+    public CompletableFuture<List<String>> getGoals(@RequestParam String customerid) throws ExecutionException, InterruptedException {
+        return customerService.getGoals(customerid);
     }
 
     @PostMapping("/resetPassword")

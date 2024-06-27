@@ -14,6 +14,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import io.vrap.rmf.base.client.ApiHttpResponse;
 import org.mach.source.dto.CustomerDTO;
 import org.mach.source.model.customObj.CustomObjectModel;
+import org.mach.source.model.customer.GoalObj;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -41,11 +42,11 @@ public class CustomerService {
         //List<String> customerObjectValues = utilityService.getCustomerObjectValues1();
         List<CustomObjectModel> customerObjectValues = utilityService.getCustomerObjectValues();
         List<String> communityNames = new ArrayList<>();
-        for(CustomObjectModel customerObjectModel : customerObjectValues){
+        for (CustomObjectModel customerObjectModel : customerObjectValues) {
             communityNames.add(customerObjectModel.getName());
         }
 
-        if(communityNames.contains(customerDTO.getCommunity())){
+        if (communityNames.contains(customerDTO.getCommunity())) {
             customFieldsDraft = CustomFieldsDraftBuilder.of()
                     .type(TypeResourceIdentifierBuilder.of().key("type-customer").build())
                     .fields(FieldContainerBuilder.of().addValue("community", customerDTO.getCommunity()).build())
@@ -60,7 +61,7 @@ public class CustomerService {
                 .password(customerDTO.getPassword())
                 .custom(customFieldsDraft)
                 .build();
-        if(Objects.nonNull(customerDTO.getCustomerType()) && customerDTO.getCustomerType().equalsIgnoreCase("leader")){
+        if (Objects.nonNull(customerDTO.getCustomerType()) && customerDTO.getCustomerType().equalsIgnoreCase("leader")) {
             customerDraft.setCustomerGroup(CustomerGroupResourceIdentifierBuilder.of().key("cust-leader").build());
         } else {
             customerDraft.setCustomerGroup(CustomerGroupResourceIdentifierBuilder.of().key("cust-normal").build());
@@ -75,7 +76,7 @@ public class CustomerService {
         //List<String> communities = utilityService.getCustomerObjectValues1();
         List<CustomObjectModel> customerObjectValues = utilityService.getCustomerObjectValues();
         List<String> communityNames = new ArrayList<>();
-        for(CustomObjectModel customerObjectModel : customerObjectValues){
+        for (CustomObjectModel customerObjectModel : customerObjectValues) {
             communityNames.add(customerObjectModel.getName());
         }
 
@@ -83,7 +84,7 @@ public class CustomerService {
                 .withId(customerid).get()
                 .execute().thenApply(ApiHttpResponse::getBody);
 
-        if(communityNames.contains(community)) {
+        if (communityNames.contains(community)) {
             /*CompletableFuture<Customer> customerCF = byProjectKeyRequestBuilder.customers()
                     .withId(customerid).get()
                     .execute().thenApply(ApiHttpResponse::getBody);*/
@@ -114,11 +115,11 @@ public class CustomerService {
                         .post(CustomerUpdateBuilder.of()
                                 .version(e.getVersion())
                                 .plusActions(custSetCustomField).build()).execute().thenApply(ApiHttpResponse::getBody);
-                return CompletableFuture.completedFuture("Customer " + e.getEmail() +" added/updated to community - "+community);
+                return CompletableFuture.completedFuture("Customer " + e.getEmail() + " added/updated to community - " + community);
             });
 
         }
-        return CompletableFuture.completedFuture(community +" is not a valid community available in Joggerhub. Available communities are "+ communityNames);
+        return CompletableFuture.completedFuture(community + " is not a valid community available in Joggerhub. Available communities are " + communityNames);
 
     }
 
@@ -145,12 +146,12 @@ public class CustomerService {
 
         return customerCF.thenApply(f -> {
             CustomFields customFields = f.getCustom();
-            if(customFields != null) {
+            if (customFields != null) {
                 FieldContainer fieldContainer = customFields.getFields();
-                if(fieldContainer != null) {
+                if (fieldContainer != null) {
                     Map<String, Object> values = fieldContainer.values();
                     String community = (String) values.get("community");
-                    return (community!=null ? community:"Community not found");
+                    return (community != null ? community : "Community not found");
                 }
             }
             return "Community not found";
@@ -162,26 +163,26 @@ public class CustomerService {
                 .withContainer(customerid + "-container").get()
                 .executeBlocking().getBody();
         List<CustomObject> customObjectPagedQueryResponseResults = customObjectPagedQueryResponse.getResults();
-        if(customObjectPagedQueryResponseResults != null && !customObjectPagedQueryResponseResults.isEmpty()) {
+        if (customObjectPagedQueryResponseResults != null && !customObjectPagedQueryResponseResults.isEmpty()) {
             Object object = customObjectPagedQueryResponseResults.get(0).getValue();
             List<String> records = (List) object;
             //List<String> records = (List) lmap.get("records");
             boolean exists = false;
-            for (String record:records){
+            for (String record : records) {
                 String dateSubstring = record.substring(0, 10);
-                if(dateSubstring.equalsIgnoreCase(date)){
+                if (dateSubstring.equalsIgnoreCase(date)) {
                     records.remove(record);
-                    records.add(dateSubstring+"_"+recordVar);
+                    records.add(dateSubstring + "_" + recordVar);
                     exists = true;
                     break;
                 }
             }
-            if(!exists){
-                records.add(date+"_"+recordVar);
+            if (!exists) {
+                records.add(date + "_" + recordVar);
             }
             CustomObjectDraft customObjectDraft = CustomObjectDraftBuilder.of()
                     .container(customerid + "-container")
-                    .key(customerid+"-key")
+                    .key(customerid + "-key")
                     .value(records)
                     .build();
             byProjectKeyRequestBuilder.customObjects()
@@ -191,13 +192,13 @@ public class CustomerService {
 
         }
 
-        if(customObjectPagedQueryResponseResults != null && customObjectPagedQueryResponseResults.isEmpty()) {
+        if (customObjectPagedQueryResponseResults != null && customObjectPagedQueryResponseResults.isEmpty()) {
             //Add records
             List<String> records = new ArrayList<>();
-            records.add(date+"_"+recordVar);
+            records.add(date + "_" + recordVar);
             CustomObjectDraft customObjectDraft = CustomObjectDraftBuilder.of()
                     .container(customerid + "-container")
-                    .key(customerid+"-key")
+                    .key(customerid + "-key")
                     .value(records)
                     .build();
             byProjectKeyRequestBuilder.customObjects()
@@ -221,8 +222,9 @@ public class CustomerService {
             Object object = customObjectPagedQueryResponseResults.get(0).getValue();
             List<String> replacedRecords = new ArrayList<>();
             List<String> records = (List) object;
-            for(String record:records){
-                String temp = record.replace("_", " --> ");;
+            for (String record : records) {
+                String temp = record.replace("_", " --> ");
+                ;
                 replacedRecords.add(temp);
             }
             return CompletableFuture.completedFuture(replacedRecords);
@@ -286,7 +288,7 @@ public class CustomerService {
                 .addPredicateVar("community", communityName)
                 .executeBlocking().getBody();
         List<CustomerDTO> customerDTOList = new ArrayList<>();
-        if(customerPagedQueryResponse.getResults() != null && customerPagedQueryResponse.getResults().size() > 0) {
+        if (customerPagedQueryResponse.getResults() != null && customerPagedQueryResponse.getResults().size() > 0) {
             List<Customer> queryResponseResults = customerPagedQueryResponse.getResults();
             for (Customer customer : queryResponseResults) {
                 CustomerDTO customerDTO = new CustomerDTO();
@@ -306,7 +308,7 @@ public class CustomerService {
                 .withContainer(customerid + "-container").get()
                 .executeBlocking().getBody();
         List<CustomObject> customObjectPagedQueryResponseResults = customObjectPagedQueryResponse.getResults();
-        if(customObjectPagedQueryResponseResults != null && !customObjectPagedQueryResponseResults.isEmpty()) {
+        if (customObjectPagedQueryResponseResults != null && !customObjectPagedQueryResponseResults.isEmpty()) {
             Object object = customObjectPagedQueryResponseResults.get(0).getValue();
             List<String> records = (List) object;
             //List<String> records = (List) lmap.get("records");
@@ -323,10 +325,10 @@ public class CustomerService {
             if(!exists){
                 records.add(date+"_"+recordVar);
             }*/
-            records.add(date+"_"+recordVar);
+            records.add(date + "_" + recordVar);
             CustomObjectDraft customObjectDraft = CustomObjectDraftBuilder.of()
                     .container(customerid + "-container")
-                    .key(customerid+"-key")
+                    .key(customerid + "-key")
                     .value(records)
                     .build();
             byProjectKeyRequestBuilder.customObjects()
@@ -336,13 +338,13 @@ public class CustomerService {
 
         }
 
-        if(customObjectPagedQueryResponseResults != null && customObjectPagedQueryResponseResults.isEmpty()) {
+        if (customObjectPagedQueryResponseResults != null && customObjectPagedQueryResponseResults.isEmpty()) {
             //Add records
             List<String> records = new ArrayList<>();
-            records.add(date+"_"+recordVar);
+            records.add(date + "_" + recordVar);
             CustomObjectDraft customObjectDraft = CustomObjectDraftBuilder.of()
                     .container(customerid + "-container")
-                    .key(customerid+"-key")
+                    .key(customerid + "-key")
                     .value(records)
                     .build();
             byProjectKeyRequestBuilder.customObjects()
@@ -352,5 +354,76 @@ public class CustomerService {
         }
 
         return CompletableFuture.completedFuture("Finished");
+    }
+
+    public CompletableFuture<String> appendOrUpdateGoals(String customerid, GoalObj goalObj) {
+        CustomObjectPagedQueryResponse customObjectPagedQueryResponse = byProjectKeyRequestBuilder.customObjects()
+                .withContainer(customerid + "-goal-container").get()
+                .executeBlocking().getBody();
+        List<CustomObject> customObjectPagedQueryResponseResults = customObjectPagedQueryResponse.getResults();
+        if (customObjectPagedQueryResponseResults != null && !customObjectPagedQueryResponseResults.isEmpty()) {
+            Object object = customObjectPagedQueryResponseResults.get(0).getValue();
+            List<String> records = (List) object;
+            //List<String> records = (List) lmap.get("records");
+            boolean exists = false;
+            for (String record : records) {
+                String dateGoalSubstring = record.substring(0, record.indexOf("~"));
+                if (dateGoalSubstring.equalsIgnoreCase(goalObj.getDate() + "*" + goalObj.getGoal())) {
+                    records.remove(record);
+                    records.add(dateGoalSubstring + "~" + String.valueOf(goalObj.isStatus()));
+                    exists = true;
+                    break;
+                }
+            }
+            if (!exists) {
+                records.add(goalObj.getDate() + "*" + goalObj.getGoal() + "~" + String.valueOf(goalObj.isStatus()));
+            }
+            CustomObjectDraft customObjectDraft = CustomObjectDraftBuilder.of()
+                    .container(customerid + "-goal-container")
+                    .key(customerid + "-goal-key")
+                    .value(records)
+                    .build();
+            byProjectKeyRequestBuilder.customObjects()
+                    .post(customObjectDraft).executeBlocking();
+            return CompletableFuture.completedFuture("Custom objects updated");
+        }
+        if (customObjectPagedQueryResponseResults != null && customObjectPagedQueryResponseResults.isEmpty()) {
+            //Add records
+            List<String> records = new ArrayList<>();
+            records.add(goalObj.getDate() + "*" + goalObj.getGoal() + "~" + String.valueOf(goalObj.isStatus()));
+            CustomObjectDraft customObjectDraft = CustomObjectDraftBuilder.of()
+                    .container(customerid + "-goal-container")
+                    .key(customerid + "-goal-key")
+                    .value(records)
+                    .build();
+            byProjectKeyRequestBuilder.customObjects()
+                    .post(customObjectDraft).executeBlocking();
+            return CompletableFuture.completedFuture("Custom objects created");
+
+        }
+
+        return CompletableFuture.completedFuture("Finished");
+    }
+
+    public CompletableFuture<List<String>> getGoals(String customerid) {
+        CustomObjectPagedQueryResponse customObjectPagedQueryResponse = byProjectKeyRequestBuilder.customObjects()
+                .withContainer(customerid + "-goal-container")
+                .get().executeBlocking().getBody();
+        List<CustomObject> customObjectPagedQueryResponseResults = customObjectPagedQueryResponse.getResults();
+        if (customObjectPagedQueryResponseResults != null && customObjectPagedQueryResponseResults.isEmpty()) {
+            return CompletableFuture.completedFuture(new ArrayList<>());
+        }
+        if (customObjectPagedQueryResponseResults != null && !customObjectPagedQueryResponseResults.isEmpty()) {
+            Object object = customObjectPagedQueryResponseResults.get(0).getValue();
+            List<String> replacedRecords = new ArrayList<>();
+            List<String> records = (List) object;
+            for (String record : records) {
+                String temp = record.replaceAll("[*~]", " --> ");
+                ;
+                replacedRecords.add(temp);
+            }
+            return CompletableFuture.completedFuture(replacedRecords);
+        }
+        return CompletableFuture.completedFuture(new ArrayList<>());
     }
 }
