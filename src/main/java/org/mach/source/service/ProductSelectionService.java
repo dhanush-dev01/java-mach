@@ -1,23 +1,18 @@
 package org.mach.source.service;
 
 import com.commercetools.api.client.ByProjectKeyRequestBuilder;
-import com.commercetools.api.models.custom_object.CustomObjectPagedQueryResponse;
-import com.commercetools.api.models.customer.*;
-import com.commercetools.api.models.customer_group.CustomerGroupResourceIdentifierBuilder;
+import com.commercetools.api.models.common.*;
+import com.commercetools.api.models.product.Product;
 import com.commercetools.api.models.product.ProductReference;
 import com.commercetools.api.models.product_selection.AssignedProductReference;
-import com.commercetools.api.models.product_selection.ProductSelection;
 import com.commercetools.api.models.product_selection.ProductSelectionProductPagedQueryResponse;
-import com.commercetools.api.models.type.*;
 import io.vrap.rmf.base.client.ApiHttpResponse;
-import kotlin.collections.ArrayDeque;
+import org.mach.source.dto.ProductDTO;
 import org.mach.source.model.customObj.CustomObjectModel;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import java.util.ArrayList;
-import java.util.LinkedHashMap;
-import java.util.List;
+import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 
@@ -29,10 +24,11 @@ public class ProductSelectionService {
     @Autowired
     private UtilityService utilityService;
 
-    public List<String> getProductSelectionProducts(String community) throws ExecutionException, InterruptedException {
+    public List<ProductDTO> getProductSelectionProducts(String community) throws ExecutionException, InterruptedException {
 
         //List<String> customerObjectValues = utilityService.getCustomerObjectValues1();
         List<String> communityNames = new ArrayList<>();
+        List<ProductDTO> productDTOS = new ArrayList<>();
         List<CustomObjectModel> customerObjectValues = utilityService.getCustomerObjectValues();
         for(CustomObjectModel customerObjectModel : customerObjectValues){
             communityNames.add(customerObjectModel.getName());
@@ -50,13 +46,45 @@ public class ProductSelectionService {
             List<AssignedProductReference> assignedProductReferences = listCF.get();
 
             for (AssignedProductReference assignedProductReference : assignedProductReferences) {
+                ProductDTO productDTO = new ProductDTO();
                 ProductReference product = assignedProductReference.getProduct();
-                productIds.add(product.getId());
+                Product productFull = byProjectKeyRequestBuilder.products().withId(product.getId())
+                        .get().executeBlocking().getBody();
+                Map<String, String> nameValues = productFull.getMasterData().getCurrent().getName().values();
+                if(Objects.nonNull(nameValues.get("en-GB"))){
+                    productDTO.setName(nameValues.get("en-GB"));
+                } else {
+                    productDTO.setName(nameValues.get("en-US"));
+                }
+                List<Price> prices = productFull.getMasterData().getCurrent().getMasterVariant().getPrices();
+                for(Price price : prices){
+                    if(Objects.nonNull(price) && Objects.nonNull(price.getCountry()) && price.getCountry().equalsIgnoreCase("IN")){
+                      //  TypedMoney value = price.getValue();
+                        productDTO.setPrice(price.getValue());
+                        break;
+                    }
+                }
+                if(Objects.isNull(productDTO.getPrice())){
+                    CentPrecisionMoney sampleMoney = TypedMoneyBuilder.of()
+                            .centPrecisionBuilder()
+                            .centAmount(10000l)
+                            .fractionDigits(2)
+                            .currencyCode("INR")
+                            .build();
+                    productDTO.setPrice(sampleMoney);
+                }
+
+                List<Image> images = productFull.getMasterData().getCurrent().getMasterVariant().getImages();
+                if(Objects.nonNull(images) && images.size() > 0){
+                    productDTO.setImageUrl(images.get(0).getUrl());
+                }
+                //productIds.add(product.getId());
+                productDTOS.add(productDTO);
             }
-            return productIds;
+            return productDTOS;
         }
-        productIds.add(community + " is not a valid community");
-        return productIds;
+        //productIds.add(community + " is not a valid community");
+        return null;
     }
 
     /*public CompletableFuture<String> addCommunity(String community, String customerid) throws ExecutionException, InterruptedException {
