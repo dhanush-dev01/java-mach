@@ -40,7 +40,7 @@ public class CustomerController {
     }
 
     @PostMapping("/signInCustomer")
-    public CompletableFuture<CustomerSignInResult> signInCustomer(@RequestBody CustomerDTO customerDTO) throws ExecutionException, InterruptedException {
+    public CompletableFuture<CustomerDTO> signInCustomer(@RequestBody CustomerDTO customerDTO) throws ExecutionException, InterruptedException {
         return customerService.getCustomer(customerDTO);
     }
 

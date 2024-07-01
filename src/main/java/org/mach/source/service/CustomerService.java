@@ -115,7 +115,8 @@ public class CustomerService {
 
     }
 
-    public CompletableFuture<CustomerSignInResult> getCustomer(CustomerDTO customerDTO) {
+    public CompletableFuture<CustomerDTO> getCustomer(CustomerDTO customerDTO) {
+        CustomerDTO customerDTOOp = new CustomerDTO();
         CustomerSignin customerSignin = CustomerSigninBuilder.of()
                 .email(customerDTO.getEmail())
                 .password(customerDTO.getPassword())
@@ -125,10 +126,22 @@ public class CustomerService {
                 .post(customerSignin)
                 .execute().thenApply(ApiHttpResponse::getBody);
 
-        CompletableFuture<CustomFields> customFieldsCompletableFuture = customerSignInResultCF.thenApply(e -> e.getCustomer().getCustom());
-        return byProjectKeyRequestBuilder.login()
+       // CompletableFuture<CustomFields> customFieldsCompletableFuture = customerSignInResultCF.thenApply(e -> e.getCustomer().getCustom());
+        /*return byProjectKeyRequestBuilder.login()
                 .post(customerSignin)
-                .execute().thenApply(ApiHttpResponse::getBody);
+                .execute().thenApply(ApiHttpResponse::getBody);*/
+        return customerSignInResultCF.thenApply(f -> {
+            String custGrpId = f.getCustomer().getCustomerGroup().getId();
+            String custGrpKey = byProjectKeyRequestBuilder.customerGroups()
+                    .withId(custGrpId).get().executeBlocking().getBody().getKey();
+
+            customerDTOOp.setFirstName(f.getCustomer().getFirstName());
+            customerDTOOp.setLastName(f.getCustomer().getLastName());
+            customerDTOOp.setEmail(f.getCustomer().getEmail());
+            customerDTOOp.setCustomerType(custGrpKey);
+            customerDTOOp.setCustomerId(f.getCustomer().getId());
+            return customerDTOOp;
+        });
     }
 
     public CompletableFuture<String> getCommunity(String customerid) {

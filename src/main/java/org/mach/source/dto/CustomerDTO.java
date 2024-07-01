@@ -11,6 +11,7 @@ public class CustomerDTO {
     private String community;
     private String newPassword;
     private String customerType;
+    private String customerId;
 
     public String getFirstName() {
         return firstName;
@@ -66,5 +67,13 @@ public class CustomerDTO {
 
     public void setCustomerType(String customerType) {
         this.customerType = customerType;
+    }
+
+    public String getCustomerId() {
+        return customerId;
+    }
+
+    public void setCustomerId(String customerId) {
+        this.customerId = customerId;
     }
 }

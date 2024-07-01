@@ -1,12 +1,14 @@
 package org.mach.source.service;
 
 import com.commercetools.api.client.ByProjectKeyRequestBuilder;
+import com.commercetools.api.models.category.CategoryResourceIdentifierBuilder;
 import com.commercetools.api.models.common.*;
-import com.commercetools.api.models.product.Product;
-import com.commercetools.api.models.product.ProductReference;
-import com.commercetools.api.models.product_selection.AssignedProductReference;
-import com.commercetools.api.models.product_selection.ProductSelectionProductPagedQueryResponse;
+import com.commercetools.api.models.product.*;
+import com.commercetools.api.models.product_selection.*;
+import com.commercetools.api.models.product_type.ProductTypeResourceIdentifierBuilder;
 import io.vrap.rmf.base.client.ApiHttpResponse;
+import org.apache.commons.lang3.RandomStringUtils;
+import org.mach.source.dto.ProductCreateDTO;
 import org.mach.source.dto.ProductDTO;
 import org.mach.source.model.customObj.CustomObjectModel;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -87,66 +89,51 @@ public class ProductSelectionService {
         return null;
     }
 
-    /*public CompletableFuture<String> addCommunity(String community, String customerid) throws ExecutionException, InterruptedException {
+    public Product addProduct(ProductCreateDTO productCreateDTO) {
+        String sku = RandomStringUtils.randomAlphanumeric(5).toUpperCase();
+        ProductDraftBuilder productDraftBuilder = ProductDraftBuilder.of()
+                .productType(ProductTypeResourceIdentifierBuilder.of()
+                        .key(productCreateDTO.getProducttypekey()).build())
+                .categories(CategoryResourceIdentifierBuilder.of()
+                        .key(productCreateDTO.getCategorykey()).build())
+                .name(LocalizedStringBuilder.of()
+                        .addValue("en-GB", productCreateDTO.getName()).build())
+                .description(LocalizedStringBuilder.of()
+                        .addValue("en-GB", productCreateDTO.getDescription()).build())
+                .slug(LocalizedStringBuilder.of()
+                        .addValue("en-GB", productCreateDTO.getSlug()).build())
+                .masterVariant(ProductVariantDraftBuilder.of()
+                        .key(UUID.randomUUID().toString() + "key").sku(sku)
+                        .prices(PriceDraftBuilder.of()
+                                .country("IN").value(productCreateDTO.getPrice()).build())
+                        .images(ImageBuilder.of().url(productCreateDTO.getImageUrl()).dimensions(ImageDimensionsBuilder.of().w(2).h(3).build()).build())
+                        .build());
 
-        Object obj = getCustomObjects().get();
-        LinkedHashMap lmap = (LinkedHashMap) obj;
-        List communities = (List) lmap.get("communities");
 
-        CompletableFuture<Customer> customerCF = byProjectKeyRequestBuilder.customers()
-                .withId(customerid).get()
-                .execute().thenApply(ApiHttpResponse::getBody);
-
-        if(communities.contains(community)) {
-            *//*CompletableFuture<Customer> customerCF = byProjectKeyRequestBuilder.customers()
-                    .withId(customerid).get()
-                    .execute().thenApply(ApiHttpResponse::getBody);*//*
-
-            CustomFields customFields = CustomFieldsBuilder.of()
-                    .type(TypeReferenceBuilder.of().id("dhbc").build())
-                    .fields(FieldContainerBuilder.of().addValue("community", community).build())
-                    .build();
-
-            CustomerSetCustomTypeAction customerSetCustomTypeAction = CustomerSetCustomTypeActionBuilder.of()
-                    .type(TypeResourceIdentifierBuilder.of().key("type-customer").build()).build();
-
-            CompletableFuture<Customer> customerCFUp = customerCF.thenApply(f -> {
-                return byProjectKeyRequestBuilder.customers()
-                        .withId(f.getId())
-                        .post(CustomerUpdateBuilder.of()
-                                .version(f.getVersion())
-                                .plusActions(customerSetCustomTypeAction).build())
-                        .execute().thenApply(ApiHttpResponse::getBody);
-            }).thenCompose(m -> m);
-
-            CustomerSetCustomFieldAction custSetCustomField = CustomerSetCustomFieldActionBuilder.of()
-                    .name("community").value(community).build();
-       *//* CustomerUpdate customerUpdate = CustomerUpdateBuilder.of()
-                .version()
-                .plusActions(custSetCustomField).build();*//*
-            return customerCFUp.thenCompose(e -> {
-                byProjectKeyRequestBuilder.customers()
-                        .withId(e.getId())
-                        .post(CustomerUpdateBuilder.of()
-                                .version(e.getVersion())
-                                .plusActions(custSetCustomField).build()).execute().thenApply(ApiHttpResponse::getBody);
-                return CompletableFuture.completedFuture("Customer " + e.getEmail() +" added/updated to community - "+community);
-            });
-
-        }
-        return CompletableFuture.completedFuture(community +" is not a valid community available in Joggerhub. Available communities are "+ communities);
+        return byProjectKeyRequestBuilder.products()
+                .post(productDraftBuilder.build()).executeBlocking().getBody();
 
     }
 
-    private CompletableFuture<Object> getCustomObjects() {
-        CompletableFuture<CustomObjectPagedQueryResponse> customObjectPagedQueryResponseCF = byProjectKeyRequestBuilder.customObjects()
-                .get().execute().thenApply(ApiHttpResponse::getBody);
+    public ProductSelection addProductToCommunity(String community, String sku) {
+        ProductPagedQueryResponse productPagedQueryResponse = byProjectKeyRequestBuilder.products()
+                .get().addWhere("masterData(staged(masterVariant(sku in :sku))) or masterData(staged(variants(sku in :sku)))")
+                .addPredicateVar("sku", sku)
+                .executeBlocking().getBody();
+        String key = productPagedQueryResponse.getResults().get(0).getKey();
+        String id = productPagedQueryResponse.getResults().get(0).getId();
+        ProductSelectionAddProductAction productSelectionAddProductAction = ProductSelectionAddProductActionBuilder.of()
+                .product(ProductResourceIdentifierBuilder.of().key(key).id(id).build())
+                //.variantSelection(ProductVariantSelectionBuilder.of().inclusionBuilder().skus(sku).build())
+                .build();
 
-        return customObjectPagedQueryResponseCF.thenApply(f -> f.getResults().get(0).getValue());
-        
+        ProductSelection productSelection = byProjectKeyRequestBuilder.productSelections().withKey(community + "-key")
+                .get().executeBlocking().getBody();
 
+        return byProjectKeyRequestBuilder.productSelections().withKey(community+"-key")
+                .post(ProductSelectionUpdateBuilder.of()
+                        .actions(productSelectionAddProductAction).version(productSelection.getVersion()).build()).executeBlocking().getBody();
 
+    }
 
-
-    }*/
 }
