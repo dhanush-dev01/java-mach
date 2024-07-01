@@ -6,6 +6,9 @@ import com.commercetools.api.models.custom_object.CustomObjectDraft;
 import com.commercetools.api.models.custom_object.CustomObjectDraftBuilder;
 import com.commercetools.api.models.custom_object.CustomObjectPagedQueryResponse;
 import com.commercetools.api.models.customer.*;
+import com.commercetools.api.models.customer_group.CustomerGroup;
+import com.commercetools.api.models.customer_group.CustomerGroupPagedQueryResponse;
+import com.commercetools.api.models.customer_group.CustomerGroupReference;
 import com.commercetools.api.models.customer_group.CustomerGroupResourceIdentifierBuilder;
 import com.commercetools.api.models.graph_ql.GraphQLRequest;
 import com.commercetools.api.models.graph_ql.GraphQLRequestBuilder;
@@ -14,7 +17,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import io.vrap.rmf.base.client.ApiHttpResponse;
 import org.mach.source.dto.CustomerDTO;
 import org.mach.source.model.customObj.CustomObjectModel;
-import org.mach.source.model.customer.GoalObj;
+import org.mach.source.model.customer.CustomerDetails;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -24,6 +27,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
+import java.util.stream.Collectors;
 
 @Service
 public class CustomerService {
@@ -35,11 +39,7 @@ public class CustomerService {
 
     public CompletableFuture<CustomerSignInResult> addCustomer(CustomerDTO customerDTO) throws ExecutionException, InterruptedException {
 
-       /* CustomFieldsBuilder community = CustomFieldsBuilder.of()
-                .type(TypeReferenceBuilder.of().id("6bddce2f-a21d-4f6e-93bb-181f16ad3488").build())
-                .fields(FieldContainerBuilder.of().addValue("community", customerDTO.getCommunity()).build());*/
         CustomFieldsDraft customFieldsDraft = null;
-        //List<String> customerObjectValues = utilityService.getCustomerObjectValues1();
         List<CustomObjectModel> customerObjectValues = utilityService.getCustomerObjectValues();
         List<String> communityNames = new ArrayList<>();
         for (CustomObjectModel customerObjectModel : customerObjectValues) {
@@ -73,7 +73,6 @@ public class CustomerService {
 
     public CompletableFuture<String> addToCommunity(String community, String customerid) throws ExecutionException, InterruptedException {
 
-        //List<String> communities = utilityService.getCustomerObjectValues1();
         List<CustomObjectModel> customerObjectValues = utilityService.getCustomerObjectValues();
         List<String> communityNames = new ArrayList<>();
         for (CustomObjectModel customerObjectModel : customerObjectValues) {
@@ -85,31 +84,24 @@ public class CustomerService {
                 .execute().thenApply(ApiHttpResponse::getBody);
 
         if (communityNames.contains(community)) {
-            /*CompletableFuture<Customer> customerCF = byProjectKeyRequestBuilder.customers()
-                    .withId(customerid).get()
-                    .execute().thenApply(ApiHttpResponse::getBody);*/
 
-            /*CustomFields customFields = CustomFieldsBuilder.of()
-                    .type(TypeReferenceBuilder.of().id("dhbc").build())
-                    .fields(FieldContainerBuilder.of().addValue("community", community).build())
-                    .build();*/
+            Customer customerGet = customerCF.get();
+            if(Objects.isNull(customerGet.getCustom())){
+                CustomerSetCustomTypeAction customerSetCustomTypeAction = CustomerSetCustomTypeActionBuilder.of()
+                        .type(TypeResourceIdentifierBuilder.of().key("type-customer").build()).build();
 
-            CustomerSetCustomTypeAction customerSetCustomTypeAction = CustomerSetCustomTypeActionBuilder.of()
-                    .type(TypeResourceIdentifierBuilder.of().key("type-customer").build()).build();
-
-            CompletableFuture<Customer> customerCFUp = customerCF.thenApply(f -> {
-                return byProjectKeyRequestBuilder.customers()
-                        .withId(f.getId())
+                customerCF = byProjectKeyRequestBuilder.customers()
+                        .withId(customerGet.getId())
                         .post(CustomerUpdateBuilder.of()
-                                .version(f.getVersion())
+                                .version(customerGet.getVersion())
                                 .plusActions(customerSetCustomTypeAction).build())
                         .execute().thenApply(ApiHttpResponse::getBody);
-            }).thenCompose(m -> m);
+            }
 
             CustomerSetCustomFieldAction custSetCustomField = CustomerSetCustomFieldActionBuilder.of()
                     .name("community").value(community).build();
 
-            return customerCFUp.thenCompose(e -> {
+            return customerCF.thenCompose(e -> {
                 byProjectKeyRequestBuilder.customers()
                         .withId(e.getId())
                         .post(CustomerUpdateBuilder.of()
@@ -303,7 +295,7 @@ public class CustomerService {
         return customerDTOList;
     }
 
-    public CompletableFuture<String> appendRecords(String customerid, String date, int recordVar) {
+    public CompletableFuture<String> appendRecords(String customerid, String date, String recordVar) {
         CustomObjectPagedQueryResponse customObjectPagedQueryResponse = byProjectKeyRequestBuilder.customObjects()
                 .withContainer(customerid + "-container").get()
                 .executeBlocking().getBody();
@@ -311,20 +303,7 @@ public class CustomerService {
         if (customObjectPagedQueryResponseResults != null && !customObjectPagedQueryResponseResults.isEmpty()) {
             Object object = customObjectPagedQueryResponseResults.get(0).getValue();
             List<String> records = (List) object;
-            //List<String> records = (List) lmap.get("records");
-            /*boolean exists = false;
-            for (String record:records){
-                String dateSubstring = record.substring(0, 10);
-                if(dateSubstring.equalsIgnoreCase(date)){
-                    records.remove(record);
-                    records.add(dateSubstring+"_"+recordVar);
-                    exists = true;
-                    break;
-                }
-            }
-            if(!exists){
-                records.add(date+"_"+recordVar);
-            }*/
+
             records.add(date + "_" + recordVar);
             CustomObjectDraft customObjectDraft = CustomObjectDraftBuilder.of()
                     .container(customerid + "-container")
@@ -356,74 +335,72 @@ public class CustomerService {
         return CompletableFuture.completedFuture("Finished");
     }
 
-    public CompletableFuture<String> appendOrUpdateGoals(String customerid, GoalObj goalObj) {
-        CustomObjectPagedQueryResponse customObjectPagedQueryResponse = byProjectKeyRequestBuilder.customObjects()
-                .withContainer(customerid + "-goal-container").get()
+    public CompletableFuture<Customer> updateCustomerDetails(CustomerDetails customerDetails, String customerid) throws ExecutionException, InterruptedException {
+
+        List<CustomerSetCustomFieldAction> actions = new ArrayList<>();
+        CompletableFuture<Customer> customerCF = byProjectKeyRequestBuilder.customers()
+                .withId(customerid).get()
+                .execute().thenApply(ApiHttpResponse::getBody);
+        Customer customerGet = customerCF.get();
+        if(Objects.isNull(customerGet.getCustom())){
+            CustomerSetCustomTypeAction customerSetCustomTypeAction = CustomerSetCustomTypeActionBuilder.of()
+                        .type(TypeResourceIdentifierBuilder.of().key("type-customer").build()).build();
+
+            customerCF = byProjectKeyRequestBuilder.customers()
+                    .withId(customerGet.getId())
+                    .post(CustomerUpdateBuilder.of()
+                            .version(customerGet.getVersion())
+                            .plusActions(customerSetCustomTypeAction).build())
+                    .execute().thenApply(ApiHttpResponse::getBody);
+        }
+
+        actions.add(CustomerSetCustomFieldActionBuilder.of()
+                .name("age").value(customerDetails.getAge()).build());
+        actions.add(CustomerSetCustomFieldActionBuilder.of()
+                .name("weight").value(customerDetails.getWeight()).build());
+        actions.add(CustomerSetCustomFieldActionBuilder.of()
+                .name("height").value(customerDetails.getHeight()).build());
+        actions.add(CustomerSetCustomFieldActionBuilder.of()
+                .name("gender").value(customerDetails.getGender()).build());
+
+        CustomerSetCustomFieldAction[] customerSetCustomFieldActionArray = new CustomerSetCustomFieldAction[actions.size()];
+
+            return customerCF.thenCompose(e -> {
+                return byProjectKeyRequestBuilder.customers()
+                        .withId(e.getId())
+                        .post(CustomerUpdateBuilder.of()
+                                .version(e.getVersion())
+                                .plusActions(actions.toArray(customerSetCustomFieldActionArray)).build()).execute().thenApply(ApiHttpResponse::getBody);
+            });
+
+    }
+
+    public CustomerDTO getLeaderOfCommunity(String communityName) {
+        CustomerPagedQueryResponse customerPagedQueryResponse = byProjectKeyRequestBuilder.customers().get()
+                .addWhere("custom(fields(community = :community))")
+                .addPredicateVar("community", communityName)
                 .executeBlocking().getBody();
-        List<CustomObject> customObjectPagedQueryResponseResults = customObjectPagedQueryResponse.getResults();
-        if (customObjectPagedQueryResponseResults != null && !customObjectPagedQueryResponseResults.isEmpty()) {
-            Object object = customObjectPagedQueryResponseResults.get(0).getValue();
-            List<String> records = (List) object;
-            //List<String> records = (List) lmap.get("records");
-            boolean exists = false;
-            for (String record : records) {
-                String dateGoalSubstring = record.substring(0, record.indexOf("~"));
-                if (dateGoalSubstring.equalsIgnoreCase(goalObj.getDate() + "*" + goalObj.getGoal())) {
-                    records.remove(record);
-                    records.add(dateGoalSubstring + "~" + String.valueOf(goalObj.isStatus()));
-                    exists = true;
-                    break;
+        CustomerDTO customerDTO = new CustomerDTO();
+
+
+        if(Objects.nonNull(customerPagedQueryResponse.getResults()) && !customerPagedQueryResponse.getResults().isEmpty()) {
+            List<Customer> queryResponseResults = customerPagedQueryResponse.getResults();
+
+
+            CustomerGroupPagedQueryResponse customerGroupPagedQueryResponse = byProjectKeyRequestBuilder.customerGroups().get()
+                    .executeBlocking().getBody();
+            List<CustomerGroup> collect = customerGroupPagedQueryResponse.getResults().stream().filter(e -> e.getKey().equalsIgnoreCase("cust-leader")).collect(Collectors.toList());
+
+            for(Customer customer : queryResponseResults){
+                CustomerGroupReference customerGroup = customer.getCustomerGroup();
+                if(Objects.nonNull(customerGroup) && customerGroup.getId().equalsIgnoreCase(collect.get(0).getId())){
+                    customerDTO.setEmail(customer.getEmail());
+                    customerDTO.setFirstName(customer.getFirstName());
+                    customerDTO.setLastName(customer.getLastName());
+                    return customerDTO;
                 }
             }
-            if (!exists) {
-                records.add(goalObj.getDate() + "*" + goalObj.getGoal() + "~" + String.valueOf(goalObj.isStatus()));
-            }
-            CustomObjectDraft customObjectDraft = CustomObjectDraftBuilder.of()
-                    .container(customerid + "-goal-container")
-                    .key(customerid + "-goal-key")
-                    .value(records)
-                    .build();
-            byProjectKeyRequestBuilder.customObjects()
-                    .post(customObjectDraft).executeBlocking();
-            return CompletableFuture.completedFuture("Custom objects updated");
         }
-        if (customObjectPagedQueryResponseResults != null && customObjectPagedQueryResponseResults.isEmpty()) {
-            //Add records
-            List<String> records = new ArrayList<>();
-            records.add(goalObj.getDate() + "*" + goalObj.getGoal() + "~" + String.valueOf(goalObj.isStatus()));
-            CustomObjectDraft customObjectDraft = CustomObjectDraftBuilder.of()
-                    .container(customerid + "-goal-container")
-                    .key(customerid + "-goal-key")
-                    .value(records)
-                    .build();
-            byProjectKeyRequestBuilder.customObjects()
-                    .post(customObjectDraft).executeBlocking();
-            return CompletableFuture.completedFuture("Custom objects created");
-
-        }
-
-        return CompletableFuture.completedFuture("Finished");
-    }
-
-    public CompletableFuture<List<String>> getGoals(String customerid) {
-        CustomObjectPagedQueryResponse customObjectPagedQueryResponse = byProjectKeyRequestBuilder.customObjects()
-                .withContainer(customerid + "-goal-container")
-                .get().executeBlocking().getBody();
-        List<CustomObject> customObjectPagedQueryResponseResults = customObjectPagedQueryResponse.getResults();
-        if (customObjectPagedQueryResponseResults != null && customObjectPagedQueryResponseResults.isEmpty()) {
-            return CompletableFuture.completedFuture(new ArrayList<>());
-        }
-        if (customObjectPagedQueryResponseResults != null && !customObjectPagedQueryResponseResults.isEmpty()) {
-            Object object = customObjectPagedQueryResponseResults.get(0).getValue();
-            List<String> replacedRecords = new ArrayList<>();
-            List<String> records = (List) object;
-            for (String record : records) {
-                String temp = record.replaceAll("[*~]", " --> ");
-                ;
-                replacedRecords.add(temp);
-            }
-            return CompletableFuture.completedFuture(replacedRecords);
-        }
-        return CompletableFuture.completedFuture(new ArrayList<>());
+        return customerDTO;
     }
 }

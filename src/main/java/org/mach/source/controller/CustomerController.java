@@ -4,7 +4,7 @@ import com.commercetools.api.models.customer.Customer;
 import com.commercetools.api.models.customer.CustomerSignInResult;
 import com.fasterxml.jackson.databind.JsonNode;
 import org.mach.source.dto.CustomerDTO;
-import org.mach.source.model.customer.GoalObj;
+import org.mach.source.model.customer.CustomerDetails;
 import org.mach.source.service.CustomerService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
@@ -55,24 +55,24 @@ public class CustomerController {
     }*/
 
     @PostMapping("/appendRecords")
-    public CompletableFuture<String> appendRecords(@RequestParam String customerid, @RequestParam String date, @RequestParam int record) throws ExecutionException, InterruptedException {
+    public CompletableFuture<String> appendRecords(@RequestParam String customerid, @RequestParam String date, @RequestParam String record) throws ExecutionException, InterruptedException {
         return customerService.appendRecords(customerid, date, record);
     }
 
-    @PostMapping("/appendGoals")
+    /*@PostMapping("/appendGoals")
     public CompletableFuture<String> appendOrUpdateGoals(@RequestParam String customerid, @RequestBody GoalObj goalObj) throws ExecutionException, InterruptedException {
         return customerService.appendOrUpdateGoals(customerid, goalObj);
-    }
+    }*/
 
     @GetMapping("/getRecords")
     public CompletableFuture<List<String>> getRecords(@RequestParam String customerid) throws ExecutionException, InterruptedException {
         return customerService.getRecords(customerid);
     }
 
-    @GetMapping("/getGoals")
+    /*@GetMapping("/getGoals")
     public CompletableFuture<List<String>> getGoals(@RequestParam String customerid) throws ExecutionException, InterruptedException {
         return customerService.getGoals(customerid);
-    }
+    }*/
 
     @PostMapping("/resetPassword")
     public CompletableFuture<Customer> resetPassword(@RequestBody CustomerDTO customerDTO) throws ExecutionException, InterruptedException {
@@ -87,6 +87,16 @@ public class CustomerController {
     @GetMapping("/getCustomersByCommunity")
     public List<CustomerDTO> getCustomersByCommunity(@RequestParam String communityName) throws ExecutionException, InterruptedException {
         return customerService.getCustomersByCommunity(communityName);
+    }
+
+    @PostMapping("/updateCustomerDetails")
+    public CompletableFuture<Customer> updateCustomerDetails(@RequestParam String customerid, @RequestBody CustomerDetails customerDetails) throws ExecutionException, InterruptedException {
+        return customerService.updateCustomerDetails(customerDetails, customerid);
+    }
+
+    @GetMapping("/getLeaderOfCommunity")
+    public CustomerDTO getLeaderOfCommunity(@RequestParam String communityName) throws ExecutionException, InterruptedException {
+        return customerService.getLeaderOfCommunity(communityName);
     }
 
 }
