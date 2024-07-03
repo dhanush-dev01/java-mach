@@ -7,6 +7,8 @@ import com.commercetools.api.models.custom_object.CustomObjectDraftBuilder;
 import com.commercetools.api.models.customer.*;
 import com.commercetools.api.models.product_selection.ProductSelection;
 import com.commercetools.api.models.product_selection.ProductSelectionDraftBuilder;
+import io.vrap.rmf.base.client.ApiHttpResponse;
+import io.vrap.rmf.base.client.error.NotFoundException;
 import org.mach.source.model.customObj.CustomObjectModel;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -91,10 +93,19 @@ public class CustomObjectService {
     }
 
     private ProductSelection removeProductSelections(String community) {
-        ProductSelection productSelection = byProjectKeyRequestBuilder.productSelections().withKey(community + "-key")
-                .get().executeBlocking().getBody();
-        return byProjectKeyRequestBuilder.productSelections().withKey(community+"-key")
-                .delete().addVersion(productSelection.getVersion()).executeBlocking().getBody();
+        try{
+            ApiHttpResponse<ProductSelection> productSelection = byProjectKeyRequestBuilder.productSelections().withKey(community + "-key")
+                    .get().executeBlocking();
+            return byProjectKeyRequestBuilder.productSelections().withKey(community+"-key")
+                        .delete().addVersion(productSelection.getBody().getVersion()).executeBlocking().getBody();
+        } catch (NotFoundException e){
+            System.out.println("Product not found");
+        } catch (Exception e){
+            e.printStackTrace();
+        }
+
+
+        return null;
     }
 
     private Customer removeCustomersFromCommunity(String community) {
