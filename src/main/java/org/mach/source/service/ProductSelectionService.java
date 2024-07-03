@@ -120,10 +120,10 @@ public class ProductSelectionService {
                 .get().addWhere("masterData(staged(masterVariant(sku in :sku))) or masterData(staged(variants(sku in :sku)))")
                 .addPredicateVar("sku", sku)
                 .executeBlocking().getBody();
-        String key = productPagedQueryResponse.getResults().get(0).getKey();
+        //String key = productPagedQueryResponse.getResults().get(0).getKey();
         String id = productPagedQueryResponse.getResults().get(0).getId();
         ProductSelectionAddProductAction productSelectionAddProductAction = ProductSelectionAddProductActionBuilder.of()
-                .product(ProductResourceIdentifierBuilder.of().key(key).id(id).build())
+                .product(ProductResourceIdentifierBuilder.of().id(id).build())
                 //.variantSelection(ProductVariantSelectionBuilder.of().inclusionBuilder().skus(sku).build())
                 .build();
 
