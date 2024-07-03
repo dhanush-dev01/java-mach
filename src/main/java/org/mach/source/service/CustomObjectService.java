@@ -112,4 +112,8 @@ public class CustomObjectService {
         }
         return null;
     }
+
+    public List<CustomObjectModel> getCommunity() throws ExecutionException, InterruptedException {
+        return utilityService.getCustomerObjectValues();
+    }
 }

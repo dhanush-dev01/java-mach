@@ -6,6 +6,7 @@ import org.mach.source.service.CustomObjectService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
 import java.util.concurrent.ExecutionException;
 
 @RestController
@@ -27,6 +28,11 @@ public class CustomObjectsController {
     @DeleteMapping("/removeCommunity")
     public CustomObject removeCommunity(@RequestParam String community) throws ExecutionException, InterruptedException {
         return customObjectService.removeCommunity(community);
+    }
+
+    @GetMapping("/getCommunity")
+    public List<CustomObjectModel> getCommunity() throws ExecutionException, InterruptedException {
+        return customObjectService.getCommunity();
     }
 
 
