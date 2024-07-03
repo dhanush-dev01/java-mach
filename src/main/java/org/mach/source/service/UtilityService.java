@@ -35,9 +35,9 @@ public class UtilityService {
             CustomObjectModel customObjectModel = new CustomObjectModel();
             customObjectModel.setName(community.get("name"));
             customObjectModel.setAddress(community.get("address"));
-            customObjectModel.setLocation("location");
-            customObjectModel.setAgenda("agenda");
-            customObjectModel.setIconUrl("iconUrl");
+            customObjectModel.setLocation(community.get("location"));
+            customObjectModel.setAgenda(community.get("agenda"));
+            customObjectModel.setIconUrl(community.get("iconUrl"));
 
             customObjectModelArrayList.add(customObjectModel);
 

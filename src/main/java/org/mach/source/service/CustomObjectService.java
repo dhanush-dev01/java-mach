@@ -1,10 +1,12 @@
 package org.mach.source.service;
 
 import com.commercetools.api.client.ByProjectKeyRequestBuilder;
+import com.commercetools.api.models.common.LocalizedStringBuilder;
 import com.commercetools.api.models.custom_object.CustomObject;
 import com.commercetools.api.models.custom_object.CustomObjectDraftBuilder;
 import com.commercetools.api.models.customer.*;
 import com.commercetools.api.models.product_selection.ProductSelection;
+import com.commercetools.api.models.product_selection.ProductSelectionDraftBuilder;
 import org.mach.source.model.customObj.CustomObjectModel;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -53,6 +55,12 @@ public class CustomObjectService {
                             .value(customerObjectValues)
                             .build())
                     .executeBlocking().getBody();
+
+            ProductSelection productSelection = byProjectKeyRequestBuilder.productSelections()
+                    .post(ProductSelectionDraftBuilder.of()
+                            .key(customObjectModel.getName() + "-key").name(LocalizedStringBuilder.of().addValue("en-GB", customObjectModel.getName()).build()).build())
+                    .executeBlocking().getBody();
+
             return customObjectModel.getName()+ " added to community list";
         }
 
