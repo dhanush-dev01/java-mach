@@ -21,8 +21,8 @@ public class CustomObjectsController {
     }*/
 
     @PostMapping("/addCommunity")
-    public String addCommunity(@RequestBody CustomObjectModel customObjectModel) throws ExecutionException, InterruptedException {
-        return customObjectService.addCommunity(customObjectModel);
+    public String addCommunity(@RequestBody CustomObjectModel customObjectModel, @RequestParam String customerid) throws ExecutionException, InterruptedException {
+        return customObjectService.addCommunity(customObjectModel, customerid);
     }
 
     @DeleteMapping("/removeCommunity")
